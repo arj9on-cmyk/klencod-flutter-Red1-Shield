@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart'; // ✅ أضفنا هذه المكتبة
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const RedShieldApp());
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode != 200) {
         setState(() {
-          _statusText = 'خطأ اتصال (${response.statusCode})';
+          _statusText = 'خطأ في السيرفر، حاول لاحقاً';
           _statusColor = kRed;
           _loading = false;
         });
@@ -159,11 +159,22 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } catch (e) {
-      setState(() {
-        _statusText = 'خطأ: ${e.toString()}';
-        _statusColor = kRed;
-        _loading = false;
-      });
+      // 🛡️ حماية الكود: إخفاء الخطأ الحقيقي وعرض رسالة نظيفة
+      if (e.toString().contains('SocketException') || 
+          e.toString().contains('ClientException') || 
+          e.toString().contains('TimeoutException')) {
+        setState(() {
+          _statusText = 'لا يوجد اتصال بالإنترنت. يرجى التحقق من الشبكة.';
+          _statusColor = kRed;
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _statusText = 'حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.';
+          _statusColor = kRed;
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -315,16 +326,16 @@ class _MainScreenState extends State<MainScreen> {
       _statusMsg = 'تم تشغيل الحماية';
     });
 
-    // ✅ فتح اللعبة بعد انتهاء التحميل
+    // ✅ فتح اللعبة مباشرة بعد انتهاء التحميل
     try {
-      final Uri appUri = Uri.parse('package:com.garena.game.df');
-      if (await canLaunchUrl(appUri)) {
-        await launchUrl(appUri);
-      } else {
-        final Uri marketUri = Uri.parse('market://details?id=com.garena.game.df');
-        if (await canLaunchUrl(marketUri)) {
-          await launchUrl(marketUri);
-        }
+      final Uri launchUri = Uri(
+        scheme: 'market',
+        path: 'details',
+        queryParameters: {'id': 'com.garena.game.df'},
+      );
+      
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
       // تجاهل الخطأ في حال عدم وجود اللعبة
