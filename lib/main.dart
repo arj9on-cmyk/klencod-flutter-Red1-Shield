@@ -159,7 +159,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } catch (e) {
-      // 🛡️ حماية الكود: إخفاء الخطأ الحقيقي وعرض رسالة نظيفة
       if (e.toString().contains('SocketException') || 
           e.toString().contains('ClientException') || 
           e.toString().contains('TimeoutException')) {
@@ -326,14 +325,9 @@ class _MainScreenState extends State<MainScreen> {
       _statusMsg = 'تم تشغيل الحماية';
     });
 
-    // ✅ فتح اللعبة مباشرة بعد انتهاء التحميل
+    // ✅ فتح اللعبة مباشرة باستخدام Intent URI
     try {
-      final Uri launchUri = Uri(
-        scheme: 'market',
-        path: 'details',
-        queryParameters: {'id': 'com.garena.game.df'},
-      );
-      
+      final Uri launchUri = Uri.parse('intent://#Intent;package=com.garena.game.df;end');
       if (await canLaunchUrl(launchUri)) {
         await launchUrl(launchUri, mode: LaunchMode.externalApplication);
       }
