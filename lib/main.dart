@@ -17,10 +17,9 @@ const Color kRed = Color(0xFFFF5555);
 const Color kCard = Color(0xFF1A1A22);
 
 // ============ jsonbin config ============
-// تم تعديل المفتاح ليشتغل مباشرة (بدون رموز الهروب)
-const String JSONBIN_API_KEY = "\$2a\$10\$6ueSPs.Rth52Seli997/TOuqpEjszXEf1Du6g.bTwyWQhYC/afy/u";
+const String JSONBIN_API_KEY = r"$2a$10$6ueSPs.Rth52Seli997/TOuqpEjszXEf1Du6g.bTwyWQhYC/afy/u";
 const String JSONBIN_BIN_ID = "6accf410ac6210605a2adcf9";
-const String JSONBIN_URL = "https://api.jsonbin.io/v3/b/\$JSONBIN_BIN_ID/latest";
+const String JSONBIN_URL = "https://api.jsonbin.io/v3/b/$JSONBIN_BIN_ID/latest";
 
 // ============ App ============
 class RedShieldApp extends StatelessWidget {
@@ -59,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _autoLogin(); // محاولة تسجيل الدخول التلقائي إذا كان محفوظاً
+    _autoLogin();
   }
 
   Future<void> _autoLogin() async {
@@ -102,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode != 200) {
         setState(() {
-          _statusText = '❌ خطأ اتصال (\${response.statusCode})';
+          _statusText = '❌ خطأ اتصال (${response.statusCode})';
           _statusColor = kRed;
           _loading = false;
         });
@@ -138,12 +137,12 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
+      final tier = foundKey['tier'] ?? 'VIP';
       setState(() {
-        _statusText = '✅ مرحباً - عضوية \${foundKey['tier'] ?? 'VIP'}';
+        _statusText = '✅ مرحباً - عضوية $tier';
         _statusColor = kAccent;
       });
 
-      // حفظ المفتاح
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('saved_key', key);
 
@@ -158,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       setState(() {
-        _statusText = '❌ خطأ: \${e.toString().substring(0, 50)}';
+        _statusText = '❌ خطأ في الاتصال';
         _statusColor = kRed;
         _loading = false;
       });
@@ -182,7 +181,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -199,8 +197,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Icon(Icons.shield, color: kAccent, size: 60),
                 ),
                 const SizedBox(height: 24),
-
-                // Title
                 const Text(
                   'RED1 SHIELD',
                   style: TextStyle(
@@ -216,8 +212,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(color: kTextDim, fontSize: 16),
                 ),
                 const SizedBox(height: 48),
-
-                // Key input
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
@@ -238,8 +232,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Login button
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -273,8 +265,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Status
                 Text(
                   _statusText,
                   style: TextStyle(color: _statusColor, fontSize: 14),
@@ -311,7 +301,6 @@ class _MainScreenState extends State<MainScreen> {
       _statusMsg = 'يرجى الانتظار...';
     });
 
-    // محاكاة شريط التحميل 3 ثواني (100 خطوة × 30 مللي ثانية)
     for (int i = 1; i <= 100; i++) {
       await Future.delayed(const Duration(milliseconds: 30));
       if (!mounted) return;
@@ -323,8 +312,6 @@ class _MainScreenState extends State<MainScreen> {
       _loading = false;
       _statusMsg = '✅ تم تشغيل الحماية';
     });
-
-    // TODO: فتح تطبيق دلتا فورس هنا لاحقاً
   }
 
   Future<void> _stopProtection() async {
@@ -397,8 +384,6 @@ class _MainScreenState extends State<MainScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
-
-                // Status card
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -430,15 +415,13 @@ class _MainScreenState extends State<MainScreen> {
                       const Divider(color: Color(0xFF2A2A35), height: 24),
                       _infoRow('👑 العضوية', tier),
                       const SizedBox(height: 8),
-                      _infoRow('📅 الصلاحية', '\$days يوم'),
+                      _infoRow('📅 الصلاحية', '$days يوم'),
                       const SizedBox(height: 8),
                       _infoRow('⏰ ينتهي', expires),
                     ],
                   ),
                 ),
                 const SizedBox(height: 30),
-
-                // Progress bar (يظهر فقط أثناء التحميل)
                 if (_loading) ...[
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
@@ -451,7 +434,7 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    '\${(_progress * 100).toInt()}%',
+                    '${(_progress * 100).toInt()}%',
                     style: const TextStyle(color: kAccent, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
@@ -461,8 +444,6 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                   const SizedBox(height: 20),
                 ],
-
-                // Success message (يظهر بعد انتهاء التحميل)
                 if (_statusMsg.isNotEmpty && !_loading) ...[
                   Text(
                     _statusMsg,
@@ -474,10 +455,7 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                   const SizedBox(height: 20),
                 ],
-
                 const Spacer(),
-
-                // Buttons
                 SizedBox(
                   width: double.infinity,
                   height: 56,
