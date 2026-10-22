@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart'; // ✅ أضفنا هذه المكتبة
 
 void main() {
   runApp(const RedShieldApp());
@@ -313,6 +314,21 @@ class _MainScreenState extends State<MainScreen> {
       _loading = false;
       _statusMsg = 'تم تشغيل الحماية';
     });
+
+    // ✅ فتح اللعبة بعد انتهاء التحميل
+    try {
+      final Uri appUri = Uri.parse('package:com.garena.game.df');
+      if (await canLaunchUrl(appUri)) {
+        await launchUrl(appUri);
+      } else {
+        final Uri marketUri = Uri.parse('market://details?id=com.garena.game.df');
+        if (await canLaunchUrl(marketUri)) {
+          await launchUrl(marketUri);
+        }
+      }
+    } catch (e) {
+      // تجاهل الخطأ في حال عدم وجود اللعبة
+    }
   }
 
   Future<void> _stopProtection() async {
