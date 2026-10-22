@@ -16,11 +16,10 @@ const Color kTextDim = Color(0xFF999999);
 const Color kRed = Color(0xFFFF5555);
 const Color kCard = Color(0xFF1A1A22);
 
-// ============ jsonbin config (محمي) ============
-// المفتاح مخزن كـ Base64 لتجنب أخطاء الرموز في المحرر
-const String SECURE_KEY = "JDJhJDEwJDZ1ZV
-";
-const String JSONBIN_BIN_ID = "6accf410ac6210605a2adcf9";
+// ============ jsonbin config ============
+const String BIN_ID = "6accf410ac6210605a2adcf9";
+const String API_KEY_PART1 = "\$2a\$10\$6ueSPs.Rth52Seli997/TOuqpEj";
+const String API_KEY_PART2 = "szXEf1Du6g.bTwyWQhYC/afy/u";
 
 // ============ App ============
 class RedShieldApp extends StatelessWidget {
@@ -35,7 +34,6 @@ class RedShieldApp extends StatelessWidget {
         scaffoldBackgroundColor: kBgDark,
         primaryColor: kAccent,
         useMaterial3: true,
-        fontFamily: 'Tajawal',
       ),
       home: const LoginScreen(),
     );
@@ -76,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (key.isEmpty) {
       if (!silent) {
         setState(() {
-          _statusText = '❌ الرجاء إدخال المفتاح';
+          _statusText = 'الرجاء إدخال المفتاح';
           _statusColor = kRed;
         });
       }
@@ -85,28 +83,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!silent) {
       setState(() {
-        _statusText = '⏳ جاري التحقق...';
+        _statusText = 'جاري التحقق...';
         _statusColor = Colors.yellow;
         _loading = true;
       });
     }
 
     try {
-      // فك تشفير المفتاح
-      final decodedKey = utf8.decode(base64.decode(SECURE_KEY.replaceAll('\n', '')));
-      final url = Uri.parse("https://api.jsonbin.io/v3/b/$JSONBIN_BIN_ID/latest");
+      final fullApiKey = API_KEY_PART1 + API_KEY_PART2;
+      final url = Uri.parse("https://api.jsonbin.io/v3/b/$BIN_ID/latest");
 
       final response = await http.get(
         url,
         headers: {
-          'X-Master-Key': decodedKey,
+          'X-Master-Key': fullApiKey,
           'Content-Type': 'application/json',
         },
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
         setState(() {
-          _statusText = '❌ خطأ اتصال (${response.statusCode})';
+          _statusText = 'خطأ اتصال (${response.statusCode})';
           _statusColor = kRed;
           _loading = false;
         });
@@ -126,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (foundKey == null) {
         setState(() {
-          _statusText = '❌ المفتاح غير صالح';
+          _statusText = 'المفتاح غير صالح';
           _statusColor = kRed;
           _loading = false;
         });
@@ -135,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (foundKey['status'] != 'active') {
         setState(() {
-          _statusText = '❌ المفتاح موقوف';
+          _statusText = 'المفتاح موقوف';
           _statusColor = kRed;
           _loading = false;
         });
@@ -144,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final tier = foundKey['tier'] ?? 'VIP';
       setState(() {
-        _statusText = '✅ مرحباً - عضوية $tier';
+        _statusText = 'مرحباً - عضوية $tier';
         _statusColor = kAccent;
       });
 
@@ -162,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       setState(() {
-        _statusText = '❌ خطأ: ${e.toString()}';
+        _statusText = 'خطأ: ${e.toString()}';
         _statusColor = kRed;
         _loading = false;
       });
@@ -249,7 +246,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       elevation: 8,
-                      shadowColor: kAccent.withOpacity(0.5),
                     ),
                     child: _loading
                         ? const SizedBox(
@@ -315,7 +311,7 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _protected = true;
       _loading = false;
-      _statusMsg = '✅ تم تشغيل الحماية';
+      _statusMsg = 'تم تشغيل الحماية';
     });
   }
 
@@ -335,7 +331,7 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _protected = false;
       _loading = false;
-      _statusMsg = '⏹ تم إيقاف الحماية';
+      _statusMsg = 'تم إيقاف الحماية';
     });
   }
 
@@ -418,11 +414,11 @@ class _MainScreenState extends State<MainScreen> {
                         ],
                       ),
                       const Divider(color: Color(0xFF2A2A35), height: 24),
-                      _infoRow('👑 العضوية', tier),
+                      _infoRow('العضوية', tier),
                       const SizedBox(height: 8),
-                      _infoRow('📅 الصلاحية', '$days يوم'),
+                      _infoRow('الصلاحية', '$days يوم'),
                       const SizedBox(height: 8),
-                      _infoRow('⏰ ينتهي', expires),
+                      _infoRow('ينتهي', expires),
                     ],
                   ),
                 ),
@@ -453,7 +449,7 @@ class _MainScreenState extends State<MainScreen> {
                   Text(
                     _statusMsg,
                     style: TextStyle(
-                      color: _statusMsg.contains('✅') ? kAccent : kRed,
+                      color: _statusMsg.contains('تشغيل') ? kAccent : kRed,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
