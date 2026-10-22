@@ -17,7 +17,8 @@ const Color kRed = Color(0xFFFF5555);
 const Color kCard = Color(0xFF1A1A22);
 
 // ============ jsonbin config ============
-const String JSONBIN_API_KEY = r"$2a$10$6ueSPs.Rth52Seli997/TOuqpEjszXEf1Du6g.bTwyWQhYC/afy/u";
+// استخدام String.raw عشان ما يفهم Dart الـ $ كمتغير
+const String JSONBIN_API_KEY = String.raw`$2a$10$6ueSPs.Rth52Seli997/TOuqpEjszXEf1Du6g.bTwyWQhYC/afy/u`;
 const String JSONBIN_BIN_ID = "6accf410ac6210605a2adcf9";
 const String JSONBIN_URL = "https://api.jsonbin.io/v3/b/$JSONBIN_BIN_ID/latest";
 
@@ -91,6 +92,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
+      print('[DEBUG] Requesting: $JSONBIN_URL');
+      print('[DEBUG] Key starts with: ${JSONBIN_API_KEY.substring(0, 10)}');
+
       final response = await http.get(
         Uri.parse(JSONBIN_URL),
         headers: {
@@ -98,6 +102,9 @@ class _LoginScreenState extends State<LoginScreen> {
           'Content-Type': 'application/json',
         },
       ).timeout(const Duration(seconds: 10));
+
+      print('[DEBUG] Status: ${response.statusCode}');
+      print('[DEBUG] Body: ${response.body.substring(0, 200)}');
 
       if (response.statusCode != 200) {
         setState(() {
@@ -156,8 +163,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } catch (e) {
+      print('[ERROR] $e');
       setState(() {
-        _statusText = '❌ خطأ في الاتصال';
+        _statusText = '❌ خطأ: ${e.toString()}';
         _statusColor = kRed;
         _loading = false;
       });
