@@ -15,7 +15,7 @@ dependencies:
   url_launcher: ^6.2.4
   device_info_plus: ^10.1.0
   crypto: ^3.0.3
-  video_player: ^2.8.6     # ✅ أضفنا مكتبة الفيديو
+  video_player: ^2.8.6
 
 dev_dependencies:
   flutter_test:
@@ -24,7 +24,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  obfuscate: true          # ✅ سطر التشفير (ممتاز)
-  assets:                  # ✅ ربط مجلد الفيديوهات
+  assets:
     - assets/bg_video.mp4
     - assets/bg_video2.mp4
