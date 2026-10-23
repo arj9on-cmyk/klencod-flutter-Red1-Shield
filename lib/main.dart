@@ -325,15 +325,36 @@ class _MainScreenState extends State<MainScreen> {
       _statusMsg = 'تم تشغيل الحماية';
     });
 
-    // ✅ فتح اللعبة مباشرة بعد انتهاء التحميل
+    // ✅ خطة فتح اللعبة (3 محاولات)
     try {
-      final Uri launchUri = Uri.parse('intent://#Intent;package=com.garena.game.df;end');
-      if (await canLaunchUrl(launchUri)) {
-        await launchUrl(launchUri, mode: LaunchMode.externalApplication);
+      // المحاولة الأولى: استخدام اسم الحزمة مباشرة
+      final Uri appUri = Uri.parse('package:com.garena.game.df');
+      if (await canLaunchUrl(appUri)) {
+        await launchUrl(appUri, mode: LaunchMode.externalApplication);
+        return; // إذا نجحت، اخرج من الدالة
       }
-    } catch (e) {
-      // تجاهل الخطأ في حال عدم وجود اللعبة
-    }
+    } catch (e) {}
+
+    try {
+      // المحاولة الثانية: استخدام رابط الـ Intent القياسي
+      final Uri intentUri = Uri.parse('intent://#Intent;package=com.garena.game.df;end');
+      if (await canLaunchUrl(intentUri)) {
+        await launchUrl(intentUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    } catch (e) {}
+
+    try {
+      // المحاولة الثالثة (الخطة البديلة): فتح صفحة اللعبة في المتجر
+      final Uri marketUri = Uri.parse('market://details?id=com.garena.game.df');
+      if (await canLaunchUrl(marketUri)) {
+        await launchUrl(marketUri, mode: LaunchMode.externalApplication);
+      } else {
+        // إذا لم يوجد متجر، افتح المتصفح
+        final Uri webUri = Uri.parse('https://play.google.com/store/apps/details?id=com.garena.game.df');
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {}
   }
 
   Future<void> _stopProtection() async {
