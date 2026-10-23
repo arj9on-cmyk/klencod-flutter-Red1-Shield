@@ -325,7 +325,7 @@ class _MainScreenState extends State<MainScreen> {
       _statusMsg = 'تم تشغيل الحماية';
     });
 
-    // ✅ فتح اللعبة مباشرة باستخدام Intent URI
+    // ✅ فتح اللعبة مباشرة بعد انتهاء التحميل
     try {
       final Uri launchUri = Uri.parse('intent://#Intent;package=com.garena.game.df;end');
       if (await canLaunchUrl(launchUri)) {
