@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:crypto/crypto.dart';
+import 'package:video_player/video_player.dart';
 
 void main() {
   runApp(const RedShieldApp());
@@ -41,6 +44,66 @@ class RedShieldApp extends StatelessWidget {
   }
 }
 
+// ============ Video Background Widget ============
+class VideoBackground extends StatefulWidget {
+  final Widget child;
+  final String videoPath;
+
+  const VideoBackground({
+    super.key, 
+    required this.child,
+    required this.videoPath,
+  });
+
+  @override
+  State<VideoBackground> createState() => _VideoBackgroundState();
+}
+
+class _VideoBackgroundState extends State<VideoBackground> {
+  late VideoPlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.asset(widget.videoPath)
+      ..initialize().then((_) {
+        _controller.setLooping(true);
+        _controller.setVolume(1); // ✅ تم تفعيل الصوت هنا
+        _controller.play();
+        setState(() {});
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        SizedBox.expand(
+          child: _controller.value.isInitialized
+              ? FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: _controller.value.size.width,
+                    height: _controller.value.size.height,
+                    child: VideoPlayer(_controller),
+                  ),
+                )
+              : Container(color: kBgDark),
+        ),
+        // طبقة تعتيم لكي تظهر النصوص بوضوح
+        Container(color: Colors.black.withOpacity(0.65)),
+        widget.child,
+      ],
+    );
+  }
+}
+
 // ============ Login Screen ============
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -54,19 +117,44 @@ class _LoginScreenState extends State<LoginScreen> {
   String _statusText = '';
   Color _statusColor = kRed;
   bool _loading = false;
+  String _deviceId = '';
 
   @override
   void initState() {
     super.initState();
+    _getDeviceId();
     _autoLogin();
+  }
+
+  Future<void> _getDeviceId() async {
+    final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    try {
+      final androidInfo = await deviceInfo.androidInfo;
+      final bytes = utf8.encode(androidInfo.id + "SALT_123");
+      final digest = sha256.convert(bytes);
+      setState(() {
+        _deviceId = digest.toString();
+      });
+    } catch (e) {
+      setState(() {
+        _deviceId = 'UNKNOWN_DEVICE';
+      });
+    }
   }
 
   Future<void> _autoLogin() async {
     final prefs = await SharedPreferences.getInstance();
     final savedKey = prefs.getString('saved_key');
-    if (savedKey != null && savedKey.isNotEmpty) {
+    final savedDevice = prefs.getString('saved_device_id');
+    
+    if (savedKey != null && savedKey.isNotEmpty && savedDevice == _deviceId && _deviceId != '') {
       _keyController.text = savedKey;
       _login(silent: true);
+    } else if (savedKey != null && savedKey.isNotEmpty) {
+       setState(() {
+          _statusText = 'يرجى إعادة إدخال المفتاح للتحقق من الجهاز';
+          _statusColor = Colors.orange;
+       });
     }
   }
 
@@ -139,6 +227,17 @@ class _LoginScreenState extends State<LoginScreen> {
         });
         return;
       }
+      
+      final String? boundDevice = foundKey['device_id'];
+      
+      if (boundDevice != null && boundDevice != 'null' && boundDevice != _deviceId) {
+         setState(() {
+          _statusText = 'هذا المفتاح مستخدم على جهاز آخر!';
+          _statusColor = kRed;
+          _loading = false;
+        });
+        return;
+      }
 
       final tier = foundKey['tier'] ?? 'VIP';
       setState(() {
@@ -148,6 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('saved_key', key);
+      await prefs.setString('saved_device_id', _deviceId);
 
       await Future.delayed(const Duration(milliseconds: 800));
 
@@ -180,14 +280,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0D0D12), Color(0xFF1A1F2E)],
-          ),
-        ),
+      body: VideoBackground(
+        videoPath: 'assets/bg_video.mp4', // الفيديو الأول
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -228,7 +322,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: kCard,
+                    color: kCard.withOpacity(0.8),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: kAccent.withOpacity(0.3)),
                   ),
@@ -325,18 +419,15 @@ class _MainScreenState extends State<MainScreen> {
       _statusMsg = 'تم تشغيل الحماية';
     });
 
-    // ✅ خطة فتح اللعبة (3 محاولات)
     try {
-      // المحاولة الأولى: استخدام اسم الحزمة مباشرة
       final Uri appUri = Uri.parse('package:com.garena.game.df');
       if (await canLaunchUrl(appUri)) {
         await launchUrl(appUri, mode: LaunchMode.externalApplication);
-        return; // إذا نجحت، اخرج من الدالة
+        return;
       }
     } catch (e) {}
 
     try {
-      // المحاولة الثانية: استخدام رابط الـ Intent القياسي
       final Uri intentUri = Uri.parse('intent://#Intent;package=com.garena.game.df;end');
       if (await canLaunchUrl(intentUri)) {
         await launchUrl(intentUri, mode: LaunchMode.externalApplication);
@@ -345,12 +436,10 @@ class _MainScreenState extends State<MainScreen> {
     } catch (e) {}
 
     try {
-      // المحاولة الثالثة (الخطة البديلة): فتح صفحة اللعبة في المتجر
       final Uri marketUri = Uri.parse('market://details?id=com.garena.game.df');
       if (await canLaunchUrl(marketUri)) {
         await launchUrl(marketUri, mode: LaunchMode.externalApplication);
       } else {
-        // إذا لم يوجد متجر، افتح المتصفح
         final Uri webUri = Uri.parse('https://play.google.com/store/apps/details?id=com.garena.game.df');
         await launchUrl(webUri, mode: LaunchMode.externalApplication);
       }
@@ -380,6 +469,7 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('saved_key');
+    await prefs.remove('saved_device_id');
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
@@ -394,14 +484,8 @@ class _MainScreenState extends State<MainScreen> {
     final days = widget.keyData['duration_days'] ?? 30;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0D0D12), Color(0xFF1A1F2E)],
-          ),
-        ),
+      body: VideoBackground(
+        videoPath: 'assets/bg_video2.mp4', // الفيديو الثاني
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -430,7 +514,7 @@ class _MainScreenState extends State<MainScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: kCard,
+                    color: kCard.withOpacity(0.85),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: kAccent.withOpacity(0.2)),
                   ),

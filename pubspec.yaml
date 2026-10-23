@@ -13,6 +13,10 @@ dependencies:
   shared_preferences: ^2.2.2
   cupertino_icons: ^1.0.6
   url_launcher: ^6.2.4
+  device_info_plus: ^10.1.0
+  crypto: ^3.0.3
+  video_player: ^2.8.6     # ✅ أضفنا مكتبة الفيديو
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -20,3 +24,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  obfuscate: true          # ✅ سطر التشفير (ممتاز)
+  assets:                  # ✅ ربط مجلد الفيديوهات
+    - assets/bg_video.mp4
+    - assets/bg_video2.mp4
