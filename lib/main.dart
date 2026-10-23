@@ -68,7 +68,7 @@ class _VideoBackgroundState extends State<VideoBackground> {
     _controller = VideoPlayerController.asset(widget.videoPath)
       ..initialize().then((_) {
         _controller.setLooping(true);
-        _controller.setVolume(1); // ✅ تم تفعيل الصوت هنا
+        _controller.setVolume(1);
         _controller.play();
         setState(() {});
       });
@@ -96,7 +96,6 @@ class _VideoBackgroundState extends State<VideoBackground> {
                 )
               : Container(color: kBgDark),
         ),
-        // طبقة تعتيم لكي تظهر النصوص بوضوح
         Container(color: Colors.black.withOpacity(0.65)),
         widget.child,
       ],
@@ -152,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _login(silent: true);
     } else if (savedKey != null && savedKey.isNotEmpty) {
        setState(() {
-          _statusText = 'يرجى إعادة إدخال المفتاح للتحقق من الجهاز';
+          _statusText = 'يرجى إعادة إدخال المفتاح للتحقق';
           _statusColor = Colors.orange;
        });
     }
@@ -227,16 +226,21 @@ class _LoginScreenState extends State<LoginScreen> {
         });
         return;
       }
-      
+
+      // 🛡️ نظام الحماية: التحقق من بصمة الجهاز (إلا إذا كان المفتاح عاماً)
       final String? boundDevice = foundKey['device_id'];
-      
-      if (boundDevice != null && boundDevice != 'null' && boundDevice != _deviceId) {
-         setState(() {
-          _statusText = 'هذا المفتاح مستخدم على جهاز آخر!';
-          _statusColor = kRed;
-          _loading = false;
-        });
-        return;
+      final String keyType = foundKey['tier'] ?? 'VIP';
+
+      // إذا لم يكن المفتاح عاماً، نطبق شرط الجهاز
+      if (keyType != 'Public') {
+        if (boundDevice != null && boundDevice != 'null' && boundDevice != _deviceId) {
+           setState(() {
+            _statusText = 'هذا المفتاح مستخدم على جهاز آخر!';
+            _statusColor = kRed;
+            _loading = false;
+          });
+          return;
+        }
       }
 
       final tier = foundKey['tier'] ?? 'VIP';
@@ -245,8 +249,10 @@ class _LoginScreenState extends State<LoginScreen> {
         _statusColor = kAccent;
       });
 
+      // حفظ المفتاح وبصمة الجهاز محلياً
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('saved_key', key);
+      // إذا كان المفتاح عاماً، نحفظ بصمة الجهاز، وإذا كان عادياً نحفظ بصمة الجهاز أيضاً
       await prefs.setString('saved_device_id', _deviceId);
 
       await Future.delayed(const Duration(milliseconds: 800));
@@ -281,7 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: VideoBackground(
-        videoPath: 'assets/bg_video.mp4', // الفيديو الأول
+        videoPath: 'assets/bg_video.mp4',
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -485,7 +491,7 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       body: VideoBackground(
-        videoPath: 'assets/bg_video2.mp4', // الفيديو الثاني
+        videoPath: 'assets/bg_video2.mp4',
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
